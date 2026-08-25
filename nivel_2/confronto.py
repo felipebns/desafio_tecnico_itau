@@ -31,8 +31,16 @@ def nivel_esperado(dias_regra1, ops_regra2):
     return "baixo"
 
 def confrontar(tools=None, caminho_lote=SAIDA / "lote.json"):
+    caminho_lote = Path(caminho_lote)
+    if not caminho_lote.exists():
+        raise SystemExit(
+            f"{caminho_lote} não existe.\n"
+            "Este script compara o parecer do agente com o da regra, então precisa do lote "
+            "da Parte C primeiro. Rode `python agente.py` e tente de novo."
+        )
+
     tools = tools or Tools()
-    registros = json.loads(Path(caminho_lote).read_text(encoding="utf-8"))
+    registros = json.loads(caminho_lote.read_text(encoding="utf-8"))
     ranking = tools.top_clientes(n=len(registros))
 
     linhas = []

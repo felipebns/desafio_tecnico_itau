@@ -157,15 +157,96 @@ parecer inválido e a mensagem específica ("campos ausentes: [...]"), teto de 2
 **Validação:** rodar o mesmo lote com e sem o loop e comparar taxa de aceitação e custo médio. Só
 vale se a recuperação custar menos que a chamada perdida.
 
+### Fracionamento em janela deslizante
+
+Fecha a limitação de a Regra 1 olhar um único dia.
+
+**Arquitetura:** trocar `groupby(["cliente_id","data"])` por janela de N dias sobre a série
+ordenada por data, dentro de cada cliente. Os três critérios (contagem, soma, maior operação)
+passam a valer sobre a janela em vez do dia.
+**Ferramenta:** `rolling` do pandas com índice temporal, sem dependência nova.
+**Validação:** rodar as duas versões sobre a mesma base e listar os clientes que só a nova captura.
+Lista vazia significa N curto demais; lista que dobra o volume de sinalizações significa N longo
+demais. N é decisão de política, e eu registraria a escolha aqui em vez de enterrar no código.
+
+### Lastro numérico como etapa da validação
+
+Fecha a limitação de a auditoria de números ser feita por fora e só medir, não barrar.
+
+**Arquitetura:** mover a checagem para dentro de `_valida_estrutura` — extrair os numerais do
+parecer e recusar se algum não existir nos retornos das ferramentas daquele cliente.
+**Ferramenta:** regex sobre o texto mais o dicionário de retornos que o agente já acumula no laço.
+**Validação:** injetar pareceres com números fabricados e confirmar a recusa; depois rodar o lote
+real e verificar que a taxa de recusa não sobe. Se subir, o extrator está pegando numeral de
+contexto legítimo (datas, IDs) e precisa afrouxar antes de entrar em produção.
+
+### Canal e contraparte como terceira regra
+
+Fecha a limitação de nenhuma regra olhar canal, contraparte ou tipo — a dimensão em que o agente
+hoje diverge com razão.
+
+**Arquitetura:** regra determinística de concentração, sobre percentual do volume do cliente indo
+para uma única contraparte ou por um único canal de baixa rastreabilidade (espécie, saque).
+**Ferramenta:** `groupby(["cliente_id","contraparte"])` e `groupby(["cliente_id","canal"])`, mesma
+estrutura das outras duas regras.
+**Validação:** verificar se ela captura os casos em que o agente hoje sobe o risco por conta
+própria — CLI-001 é o teste. Se capturar, o confronto passa a medir discordância real de
+julgamento em vez de medir o que falta na regra.
+
+### Regras mais robustas a amostra pequena
+
+Fecha duas limitações: a mediana da Regra 2 incluir a própria operação atípica, e o dedupe assumir
+que id repetido é sempre recarga.
+
+**Arquitetura:** calcular a mediana excluindo a operação sob teste, e trocar o `drop_duplicates()`
+por uma política explícita de conflito — mesmo id com campos divergentes vira uma decisão
+registrada (manter a última carga, ou marcar para revisão), não um descarte silencioso.
+**Ferramenta:** pandas nos dois casos; o segundo pede uma coluna de origem ou timestamp de carga
+que a base atual não tem.
+**Validação:** para a mediana, comparar quantas operações mudam de status nas duas versões. Para o
+dedupe, injetar duplicatas divergentes artificiais e confirmar que nenhuma some sem registro.
+
+### Estabilidade do parecer
+
+Fecha duas limitações: o agente ser inconsistente entre casos parecidos, e não haver
+reprodutibilidade.
+
+**Arquitetura:** rodar cada cliente N vezes e reportar a moda do `nivel_risco` mais a dispersão,
+em vez de tratar uma execução como verdade. E dar contexto comparativo ao agente — junto do
+dossiê, os agregados da carteira (mediana das medianas, distribuição de razões), para que exista
+um "mais grave que" onde hoje não existe.
+**Ferramenta:** o próprio laço em lote, mais um agregado novo em `Tools`.
+**Validação:** medir a dispersão antes e depois sobre os mesmos 10 clientes. O caso de teste é o
+par CLI-013 e CLI-023: se com contexto comparativo o mais grave passar a receber o nível maior de
+forma consistente, o problema era falta de baseline e não o modelo.
+
 ### Nível 3 — Trilha A, fluxo multiagente
 
-**Arquitetura:** três papéis encadeados sobre o que já existe. **Triador** recebe cliente e dossiê
-e decide se o caso segue — cliente sem sinalização para aqui, que é o que o lote de controle já
-mostra o agente fazendo. **Investigador** é o agente atual, com as três ferramentas. **Redator**
-recebe as evidências e escreve o parecer validado, sem acesso a ferramentas, para não reabrir
-investigação na hora de redigir.
+**Arquitetura:** três papéis encadeados sobre o que já existe.
 
+- **Triador** recebe cliente e dossiê e decide se o caso segue. Cliente sem sinalização para aqui,
+  que é o que o lote de controle já mostra o agente atual fazendo bem.
+- **Investigador** é o agente de hoje, com as três ferramentas e a escolha de quais chamar.
+- **Redator** recebe as evidências coletadas e escreve o parecer validado, sem acesso a
+  ferramentas, para não reabrir investigação na hora de redigir.
 
-### Utilização de LangChain como framework para agente de IA. 
+**Estado compartilhado:** um dicionário único que atravessa os três papéis, com `cliente_id`, o
+dossiê inicial, a lista de evidências que o Investigador coletou (retorno de cada ferramenta com o
+argumento usado), e a decisão registrada de cada papel. Cada papel só escreve na sua fatia; o
+Redator lê tudo e não escreve nada além do parecer.
 
-A curto prazo, o SDK da OpenAI funciona perfeitamente, mas falta robustez ao longo prazo, gostaria de utilizar um framework mais completo para criar uma solução que funciona melhor para esse cenário
+**Condição de parada:** três, em ordem. O Triador barrando o caso encerra o fluxo sem custo de
+investigação. O Investigador não pedindo nova ferramenta passa a bola ao Redator. E o teto de
+iterações que o agente já tem hoje continua valendo como rede — sem ele, um papel que insista em
+chamar ferramenta roda até a cota acabar, que é exatamente o que eu vi acontecer ao testar
+`json_schema`.
+
+**Ferramenta:** nenhuma nova. `Tools`, a validação estrutural e o registro de custo por chamada são
+reaproveitados inteiros; o que muda é o encadeamento e o prompt de cada papel. O diagrama Mermaid
+do fluxo iria em `docs/ARQUITETURA.md`.
+
+**Validação:** rodar os mesmos 10 clientes e comparar contra o `lote.json` atual, em três eixos.
+Custo total deve cair, porque o Triador corta casos antes de investigar. Consistência entre casos
+parecidos deve subir, porque o Redator vê o conjunto das evidências de uma vez em vez de decidir
+enquanto ainda coleta. E o lastro numérico deve continuar em zero. Se o custo subir sem ganho de
+consistência, a divisão em três papéis não se paga e o agente único é a resposta certa.

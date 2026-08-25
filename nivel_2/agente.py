@@ -384,11 +384,13 @@ def parte_c(tools, clientes, modelo="gpt-4o-mini"):
     return registros
 
 if __name__ == "__main__":
+    # ORDEM DE EXECUÇÃO: este script produz outputs/lote.json, que confronto.py consome.
+    # Rode agente.py antes de confronto.py.
     tools = Tools()
 
-    # Parte A — ranking dos 10 mais sinalizados
-    ranking = parte_a(tools)
+    # Parte A — ranking dos 10 mais sinalizados.
+    parte_a(tools)
 
-    # Parte C — roda o agente em lote e salva em outputs/
-    # Comente uma das duas para rodar só a outra.
-    parte_c(tools, ranking.index.tolist())
+    # Parte C — roda o agente em lote e salva em outputs/.
+    # As duas são independentes: comente qualquer uma das chamadas para rodar só a outra.
+    parte_c(tools, tools.top_clientes(n=10).index.tolist())

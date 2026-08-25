@@ -1,14 +1,5 @@
 # Desafio Técnico — Estágio em Engenharia de IA
 
-Triagem de operações financeiras para Prevenção à Lavagem de Dinheiro, combinando **regras
-determinísticas** (o que é cálculo) com **um modelo de linguagem** (o que é interpretação).
-
-A separação entre as duas coisas é o eixo do projeto: toda soma, mediana, comparação com limite e
-decisão de "a regra disparou" acontece em pandas. O modelo recebe números já calculados e produz
-parecer em texto — ele nunca calcula e nunca decide se um limite foi ultrapassado. O schema de
-saída do parecer não tem nenhum campo numérico, então essa fronteira é estrutural, não uma
-instrução de prompt.
-
 ## Como rodar
 
 ```bash
@@ -23,15 +14,18 @@ commitadas; a Parte B faz chamadas de API e precisa da chave.
 
 **Nível 2**
 
+**A ordem importa:** `confronto.py` lê `outputs/lote.json`, que é produzido por `agente.py`.
+Rodar fora de ordem para com uma mensagem explicando o que falta.
+
 ```bash
 cd nivel_2
 python tools.py       # Parte A: ranking dos 10 clientes mais sinalizados
 python agente.py      # Partes A e C: ranking + lote do agente -> outputs/
-python confronto.py   # Parte D: confronto e lote de controle -> outputs/
+python confronto.py   # Parte D: confronto e lote de controle -> outputs/  (depende do anterior)
 ```
 
-Em `agente.py` as chamadas de `parte_a` e `parte_c` ficam no `__main__`; comente uma para rodar
-só a outra. `confronto.py` depende de `outputs/lote.json` já existir.
+Em `agente.py` as chamadas de `parte_a` e `parte_c` ficam no `__main__` e são independentes:
+comente qualquer uma para rodar só a outra.
 
 ### Com Docker
 
