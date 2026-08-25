@@ -17,6 +17,8 @@
 
 ### Nível 2
 * Adaptar o código no Nivel 1 para a parte A de modo mais rápido, evita trabalho repetitivo
+* Criação de ferramentas de modo mais eficiente, utilizando o código anterior como base
+* Gerando prompt mais robusto para escolha de ferramentas e testes iterativos se as ferramentas estão funcionando de acordo (e escolha correta)
 
 ### Onde a IA me levou para um caminho errado e eu percebi:
 * Ia tava usando um conceito de "cliente sinalizado" diferente do meu, tive que definir efetivamente
