@@ -110,6 +110,16 @@ Responda com um objeto json, e nada fora dele, com exatamente estes campos:
 - "red_flags": lista de strings, cada uma ancorada em algo que você viu nas ferramentas
 - "justificativa": string, no máximo 4 frases"""
 
+# Preço por 1M de tokens do gpt-4o-mini, em USD. Confira na tabela vigente do provedor
+# antes de citar o custo em qualquer lugar — é parâmetro, não verdade do código.
+PRECO_ENTRADA_1M = 0.15
+PRECO_SAIDA_1M = 0.60
+
+
+def custo_usd(tokens_entrada, tokens_saida):
+    return tokens_entrada / 1e6 * PRECO_ENTRADA_1M + tokens_saida / 1e6 * PRECO_SAIDA_1M
+
+
 class Agente:
     NIVEIS_VALIDOS = {"baixo", "médio", "alto"}
     CAMPOS_OBRIGATORIOS = {"nivel_risco", "tipologia_suspeita", "red_flags", "justificativa"}
@@ -131,10 +141,12 @@ class Agente:
         ferramentas_usadas = []
         tokens_entrada = tokens_saida = 0
         chamadas_api = 0
+        chamadas = []  # custo e latência de cada chamada de API, não só do total
         inicio = time.perf_counter()
         bruto = None
 
-        for _ in range(self.max_iteracoes):
+        for iteracao in range(self.max_iteracoes):
+            t0 = time.perf_counter()
             resposta = self.client.responses.create(
                 model=self.model,
                 temperature=0,
@@ -143,9 +155,22 @@ class Agente:
                 tools=ESQUEMAS,
                 text={"format": {"type": "json_object"}},  # impede o ```json em volta
             )
+            latencia_chamada = time.perf_counter() - t0
             chamadas_api += 1
             tokens_entrada += resposta.usage.input_tokens
             tokens_saida += resposta.usage.output_tokens
+            chamadas.append(
+                {
+                    "cliente_id": cliente_id,
+                    "iteracao": iteracao,
+                    "tokens_entrada": resposta.usage.input_tokens,
+                    "tokens_saida": resposta.usage.output_tokens,
+                    "latencia_s": round(latencia_chamada, 3),
+                    "custo_usd": round(
+                        custo_usd(resposta.usage.input_tokens, resposta.usage.output_tokens), 6
+                    ),
+                }
+            )
 
             pedidos = [i for i in resposta.output if i.type == "function_call"]
             if not pedidos:
@@ -182,8 +207,10 @@ class Agente:
             "tokens_entrada": tokens_entrada,
             "tokens_saida": tokens_saida,
             "tokens_total": tokens_entrada + tokens_saida,
+            "custo_usd": round(custo_usd(tokens_entrada, tokens_saida), 6),
             "aceito": erro is None,
             "motivo_recusa": erro,
+            "chamadas": chamadas,
         }
         return parecer, metricas
 
@@ -213,3 +240,104 @@ class Agente:
             if not isinstance(d[campo], str) or not d[campo].strip():
                 return None, f"{campo} deve ser texto não vazio"
         return d, None
+    def executar_lote(self, clientes):
+        """Roda o agente sobre uma lista de clientes; devolve um registro por cliente."""
+        registros = []
+        for i, cliente in enumerate(clientes, 1):
+            parecer, metricas = self.analisar(cliente)
+            print(
+                f"  [{i}/{len(clientes)}] {cliente}: "
+                f"{'ok' if metricas['aceito'] else 'RECUSADO'} | "
+                f"{metricas['chamadas_api']} chamadas | {metricas['tokens_total']} tok | "
+                f"{metricas['latencia_s']}s"
+            )
+            registros.append({"cliente_id": cliente, "parecer": parecer, "metricas": metricas})
+        return registros
+
+
+if __name__ == "__main__":
+    import pandas as pd
+
+    SAIDA = Path(__file__).resolve().parent.parent / "outputs"
+    SAIDA.mkdir(exist_ok=True)
+
+    tools = Tools()
+    clientes = tools.top_clientes(n=10).index.tolist()
+    print(f"Rodando o agente sobre {len(clientes)} clientes: {clientes}\n")
+
+    registros = Agente(tools=tools).executar_lote(clientes)
+
+    # 1. um registro por cliente, com o parecer estruturado
+    (SAIDA / "lote.json").write_text(
+        json.dumps(registros, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    # 2. versão tabular
+    linhas = []
+    for r in registros:
+        p, m = r["parecer"] or {}, r["metricas"]
+        linhas.append(
+            {
+                "cliente_id": r["cliente_id"],
+                "aceito": m["aceito"],
+                "nivel_risco": p.get("nivel_risco"),
+                "tipologia_suspeita": p.get("tipologia_suspeita"),
+                "n_red_flags": len(p.get("red_flags", [])),
+                "red_flags": " | ".join(p.get("red_flags", [])),
+                "justificativa": p.get("justificativa"),
+                "ferramentas": " -> ".join(m["ferramentas_usadas"]),
+                "n_ferramentas": m["n_ferramentas"],
+                "chamadas_api": m["chamadas_api"],
+                "tokens_entrada": m["tokens_entrada"],
+                "tokens_saida": m["tokens_saida"],
+                "tokens_total": m["tokens_total"],
+                "custo_usd": m["custo_usd"],
+                "latencia_s": m["latencia_s"],
+            }
+        )
+    lote = pd.DataFrame(linhas)
+    lote.to_csv(SAIDA / "lote.csv", index=False)
+
+    # 3. custo e latência de cada chamada de API, não só por cliente
+    chamadas = pd.DataFrame([c for r in registros for c in r["metricas"]["chamadas"]])
+    chamadas.to_csv(SAIDA / "chamadas.csv", index=False)
+
+    # ---------------------------------------------------------------- análise
+    print("\n" + "=" * 72)
+    print("TOTAIS DO LOTE")
+    print("=" * 72)
+    print(
+        pd.DataFrame(
+            {
+                "clientes": [len(lote)],
+                "aceitos": [int(lote["aceito"].sum())],
+                "chamadas_api": [int(lote["chamadas_api"].sum())],
+                "tokens_total": [int(lote["tokens_total"].sum())],
+                "custo_usd": [round(lote["custo_usd"].sum(), 4)],
+                "latencia_total_s": [round(lote["latencia_s"].sum(), 1)],
+            }
+        ).to_string(index=False)
+    )
+
+    print("\nPor chamada de API:")
+    print(chamadas[["tokens_entrada", "tokens_saida", "latencia_s", "custo_usd"]].describe().round(4).to_string())
+
+    print("\nCusto por cliente, do mais caro ao mais barato:")
+    print(
+        lote[["cliente_id", "n_ferramentas", "chamadas_api", "tokens_total", "custo_usd", "latencia_s"]]
+        .sort_values("custo_usd", ascending=False)
+        .to_string(index=False)
+    )
+
+    print("\nDistribuição de nivel_risco:")
+    print(lote["nivel_risco"].value_counts().to_string())
+
+    print("\nCusto médio por combinação de ferramentas:")
+    print(
+        lote.groupby("ferramentas")
+        .agg(clientes=("cliente_id", "size"), tokens=("tokens_total", "mean"), custo=("custo_usd", "mean"))
+        .round(4)
+        .to_string()
+    )
+
+    print(f"\nSalvos em outputs/: lote.json, lote.csv, chamadas.csv")

@@ -1,0 +1,578 @@
+[
+  {
+    "cliente_id": "CLI-014",
+    "parecer": {
+      "nivel_risco": "alto",
+      "tipologia_suspeita": "valor atípico",
+      "red_flags": [
+        "Regra 2 disparou: operação OP-00133 de R$ 23640.97, 10.24x a mediana",
+        "Uso significativo de canais: 49.28% das operações via PIX e 32.35% via TED"
+      ],
+      "justificativa": "O cliente apresentou uma operação que é 10.24 vezes a mediana, indicando um valor atípico. Além disso, a concentração de operações em canais específicos pode sugerir um padrão de comportamento que merece atenção. A análise de contrapartes e a natureza das operações seriam necessárias para uma avaliação mais completa."
+    },
+    "metricas": {
+      "cliente_id": "CLI-014",
+      "modelo": "gpt-4o-mini",
+      "chamadas_api": 3,
+      "ferramentas_usadas": [
+        "historico_cliente",
+        "perfil_canal"
+      ],
+      "n_ferramentas": 2,
+      "latencia_s": 5.11,
+      "tokens_entrada": 3764,
+      "tokens_saida": 203,
+      "tokens_total": 3967,
+      "custo_usd": 0.000686,
+      "aceito": true,
+      "motivo_recusa": null,
+      "chamadas": [
+        {
+          "cliente_id": "CLI-014",
+          "iteracao": 0,
+          "tokens_entrada": 940,
+          "tokens_saida": 20,
+          "latencia_s": 1.913,
+          "custo_usd": 0.000153
+        },
+        {
+          "cliente_id": "CLI-014",
+          "iteracao": 1,
+          "tokens_entrada": 1325,
+          "tokens_saida": 20,
+          "latencia_s": 1.023,
+          "custo_usd": 0.000211
+        },
+        {
+          "cliente_id": "CLI-014",
+          "iteracao": 2,
+          "tokens_entrada": 1499,
+          "tokens_saida": 163,
+          "latencia_s": 2.156,
+          "custo_usd": 0.000323
+        }
+      ]
+    }
+  },
+  {
+    "cliente_id": "CLI-023",
+    "parecer": {
+      "nivel_risco": "alto",
+      "tipologia_suspeita": "valor atípico",
+      "red_flags": [
+        "Operação OP-00219 de R$ 41.768,17, com razão de 12,89 vezes a mediana.",
+        "Operação OP-00317 de R$ 65.417,17, com razão de 20,18 vezes a mediana.",
+        "Uso significativo de espécie, representando 28,12% do volume total."
+      ],
+      "justificativa": "A Regra 2 foi acionada devido a operações que ultrapassam 5 vezes a mediana do cliente. O uso de espécie em um volume considerável também levanta preocupações. Informações adicionais sobre a natureza das operações seriam necessárias para uma análise mais aprofundada."
+    },
+    "metricas": {
+      "cliente_id": "CLI-023",
+      "modelo": "gpt-4o-mini",
+      "chamadas_api": 3,
+      "ferramentas_usadas": [
+        "historico_cliente",
+        "perfil_canal"
+      ],
+      "n_ferramentas": 2,
+      "latencia_s": 7.92,
+      "tokens_entrada": 3698,
+      "tokens_saida": 217,
+      "tokens_total": 3915,
+      "custo_usd": 0.000685,
+      "aceito": true,
+      "motivo_recusa": null,
+      "chamadas": [
+        {
+          "cliente_id": "CLI-023",
+          "iteracao": 0,
+          "tokens_entrada": 940,
+          "tokens_saida": 20,
+          "latencia_s": 1.319,
+          "custo_usd": 0.000153
+        },
+        {
+          "cliente_id": "CLI-023",
+          "iteracao": 1,
+          "tokens_entrada": 1291,
+          "tokens_saida": 20,
+          "latencia_s": 3.475,
+          "custo_usd": 0.000206
+        },
+        {
+          "cliente_id": "CLI-023",
+          "iteracao": 2,
+          "tokens_entrada": 1467,
+          "tokens_saida": 177,
+          "latencia_s": 3.086,
+          "custo_usd": 0.000326
+        }
+      ]
+    }
+  },
+  {
+    "cliente_id": "CLI-028",
+    "parecer": {
+      "nivel_risco": "alto",
+      "tipologia_suspeita": "valor atípico",
+      "red_flags": [
+        "Operação OP-00308 de R$ 27.715,48, com razão de 6.26 vezes a mediana.",
+        "Operação OP-00307 de R$ 24.875,39, com razão de 5.61 vezes a mediana.",
+        "Concentração de operações via TED, representando 69.56% do volume total."
+      ],
+      "justificativa": "A Regra 2 foi acionada devido a operações com valores significativamente acima da mediana do cliente. As operações atípicas representam um risco elevado, especialmente considerando a concentração no canal TED. Informações adicionais sobre as contrapartes seriam necessárias para uma análise mais aprofundada."
+    },
+    "metricas": {
+      "cliente_id": "CLI-028",
+      "modelo": "gpt-4o-mini",
+      "chamadas_api": 3,
+      "ferramentas_usadas": [
+        "historico_cliente",
+        "perfil_canal"
+      ],
+      "n_ferramentas": 2,
+      "latencia_s": 4.99,
+      "tokens_entrada": 3698,
+      "tokens_saida": 220,
+      "tokens_total": 3918,
+      "custo_usd": 0.000687,
+      "aceito": true,
+      "motivo_recusa": null,
+      "chamadas": [
+        {
+          "cliente_id": "CLI-028",
+          "iteracao": 0,
+          "tokens_entrada": 940,
+          "tokens_saida": 20,
+          "latencia_s": 0.904,
+          "custo_usd": 0.000153
+        },
+        {
+          "cliente_id": "CLI-028",
+          "iteracao": 1,
+          "tokens_entrada": 1292,
+          "tokens_saida": 20,
+          "latencia_s": 0.995,
+          "custo_usd": 0.000206
+        },
+        {
+          "cliente_id": "CLI-028",
+          "iteracao": 2,
+          "tokens_entrada": 1466,
+          "tokens_saida": 180,
+          "latencia_s": 3.05,
+          "custo_usd": 0.000328
+        }
+      ]
+    }
+  },
+  {
+    "cliente_id": "CLI-013",
+    "parecer": {
+      "nivel_risco": "alto",
+      "tipologia_suspeita": "valor atípico",
+      "red_flags": [
+        "Uma operação de R$ 28487.76, que é 9.05 vezes a mediana do cliente.",
+        "Outra operação de R$ 26754.23, que é 8.5 vezes a mediana do cliente.",
+        "Concentração de operações via TED, representando 67.97% do volume total."
+      ],
+      "justificativa": "A análise revelou operações com valores atípicos que superam em mais de 5 vezes a mediana do cliente. Além disso, a maioria das operações foi realizada através de TED, o que pode indicar um padrão de movimentação que merece atenção. A ausência de disparo da Regra 1 reforça a necessidade de monitoramento das operações atípicas."
+    },
+    "metricas": {
+      "cliente_id": "CLI-013",
+      "modelo": "gpt-4o-mini",
+      "chamadas_api": 3,
+      "ferramentas_usadas": [
+        "historico_cliente",
+        "perfil_canal"
+      ],
+      "n_ferramentas": 2,
+      "latencia_s": 5.84,
+      "tokens_entrada": 3732,
+      "tokens_saida": 229,
+      "tokens_total": 3961,
+      "custo_usd": 0.000697,
+      "aceito": true,
+      "motivo_recusa": null,
+      "chamadas": [
+        {
+          "cliente_id": "CLI-013",
+          "iteracao": 0,
+          "tokens_entrada": 940,
+          "tokens_saida": 20,
+          "latencia_s": 1.116,
+          "custo_usd": 0.000153
+        },
+        {
+          "cliente_id": "CLI-013",
+          "iteracao": 1,
+          "tokens_entrada": 1293,
+          "tokens_saida": 20,
+          "latencia_s": 1.512,
+          "custo_usd": 0.000206
+        },
+        {
+          "cliente_id": "CLI-013",
+          "iteracao": 2,
+          "tokens_entrada": 1499,
+          "tokens_saida": 189,
+          "latencia_s": 3.178,
+          "custo_usd": 0.000338
+        }
+      ]
+    }
+  },
+  {
+    "cliente_id": "CLI-005",
+    "parecer": {
+      "nivel_risco": "médio",
+      "tipologia_suspeita": "valor atípico",
+      "red_flags": [
+        "Operação OP-00043 de R$ 30.743,97, que é 14,34 vezes a mediana do cliente.",
+        "Operação OP-00049 de R$ 11.988,17, que é 5,59 vezes a mediana do cliente.",
+        "Uso de múltiplos canais, com destaque para cartão e espécie."
+      ],
+      "justificativa": "A análise revelou a disparada da Regra 2, indicando operações atípicas em relação à mediana do cliente. O cliente utiliza diversos canais, o que pode sugerir um padrão de movimentação diversificado. Informações adicionais sobre a origem dos fundos seriam necessárias para uma avaliação mais completa."
+    },
+    "metricas": {
+      "cliente_id": "CLI-005",
+      "modelo": "gpt-4o-mini",
+      "chamadas_api": 3,
+      "ferramentas_usadas": [
+        "historico_cliente",
+        "perfil_canal"
+      ],
+      "n_ferramentas": 2,
+      "latencia_s": 4.91,
+      "tokens_entrada": 3724,
+      "tokens_saida": 222,
+      "tokens_total": 3946,
+      "custo_usd": 0.000692,
+      "aceito": true,
+      "motivo_recusa": null,
+      "chamadas": [
+        {
+          "cliente_id": "CLI-005",
+          "iteracao": 0,
+          "tokens_entrada": 940,
+          "tokens_saida": 20,
+          "latencia_s": 1.039,
+          "custo_usd": 0.000153
+        },
+        {
+          "cliente_id": "CLI-005",
+          "iteracao": 1,
+          "tokens_entrada": 1289,
+          "tokens_saida": 20,
+          "latencia_s": 1.19,
+          "custo_usd": 0.000205
+        },
+        {
+          "cliente_id": "CLI-005",
+          "iteracao": 2,
+          "tokens_entrada": 1495,
+          "tokens_saida": 182,
+          "latencia_s": 2.64,
+          "custo_usd": 0.000333
+        }
+      ]
+    }
+  },
+  {
+    "cliente_id": "CLI-026",
+    "parecer": {
+      "nivel_risco": "alto",
+      "tipologia_suspeita": "valor atípico",
+      "red_flags": [
+        "Operação OP-00253 de R$ 21.261,01 é 10,46 vezes a mediana do cliente.",
+        "Operação OP-00247 de R$ 12.518,30 é 6,16 vezes a mediana do cliente.",
+        "Concentração de operações em espécie, totalizando R$ 11.715,92."
+      ],
+      "justificativa": "A Regra 2 foi acionada devido a operações que ultrapassam 5 vezes a mediana do cliente. A concentração em espécie sugere um padrão que pode ser preocupante. Informações adicionais sobre a origem dos fundos seriam necessárias para uma análise mais completa."
+    },
+    "metricas": {
+      "cliente_id": "CLI-026",
+      "modelo": "gpt-4o-mini",
+      "chamadas_api": 3,
+      "ferramentas_usadas": [
+        "historico_cliente",
+        "perfil_canal"
+      ],
+      "n_ferramentas": 2,
+      "latencia_s": 4.3,
+      "tokens_entrada": 3728,
+      "tokens_saida": 216,
+      "tokens_total": 3944,
+      "custo_usd": 0.000689,
+      "aceito": true,
+      "motivo_recusa": null,
+      "chamadas": [
+        {
+          "cliente_id": "CLI-026",
+          "iteracao": 0,
+          "tokens_entrada": 940,
+          "tokens_saida": 20,
+          "latencia_s": 1.126,
+          "custo_usd": 0.000153
+        },
+        {
+          "cliente_id": "CLI-026",
+          "iteracao": 1,
+          "tokens_entrada": 1291,
+          "tokens_saida": 20,
+          "latencia_s": 0.832,
+          "custo_usd": 0.000206
+        },
+        {
+          "cliente_id": "CLI-026",
+          "iteracao": 2,
+          "tokens_entrada": 1497,
+          "tokens_saida": 176,
+          "latencia_s": 2.296,
+          "custo_usd": 0.00033
+        }
+      ]
+    }
+  },
+  {
+    "cliente_id": "CLI-001",
+    "parecer": {
+      "nivel_risco": "alto",
+      "tipologia_suspeita": "valor atípico",
+      "red_flags": [
+        "Regra 2 disparou: operação OP-00008 de R$ 25.110,15, que é 15,6 vezes a mediana do cliente.",
+        "A operação atípica foi realizada em espécie, representando 52,37% do volume total.",
+        "O cliente possui um volume total de R$ 47.947,81 em 10 operações."
+      ],
+      "justificativa": "A operação OP-00008 é significativamente maior que a mediana do cliente, indicando um comportamento atípico. Além disso, a concentração de operações em espécie levanta preocupações adicionais. Informações sobre a natureza da operação e contrapartes seriam necessárias para uma análise mais aprofundada."
+    },
+    "metricas": {
+      "cliente_id": "CLI-001",
+      "modelo": "gpt-4o-mini",
+      "chamadas_api": 3,
+      "ferramentas_usadas": [
+        "historico_cliente",
+        "perfil_canal"
+      ],
+      "n_ferramentas": 2,
+      "latencia_s": 5.85,
+      "tokens_entrada": 3706,
+      "tokens_saida": 223,
+      "tokens_total": 3929,
+      "custo_usd": 0.00069,
+      "aceito": true,
+      "motivo_recusa": null,
+      "chamadas": [
+        {
+          "cliente_id": "CLI-001",
+          "iteracao": 0,
+          "tokens_entrada": 940,
+          "tokens_saida": 20,
+          "latencia_s": 1.024,
+          "custo_usd": 0.000153
+        },
+        {
+          "cliente_id": "CLI-001",
+          "iteracao": 1,
+          "tokens_entrada": 1281,
+          "tokens_saida": 20,
+          "latencia_s": 2.236,
+          "custo_usd": 0.000204
+        },
+        {
+          "cliente_id": "CLI-001",
+          "iteracao": 2,
+          "tokens_entrada": 1485,
+          "tokens_saida": 183,
+          "latencia_s": 2.563,
+          "custo_usd": 0.000333
+        }
+      ]
+    }
+  },
+  {
+    "cliente_id": "CLI-029",
+    "parecer": {
+      "nivel_risco": "alto",
+      "tipologia_suspeita": "fracionamento",
+      "red_flags": [
+        "Regra 1 disparou em 2026-05-26 devido a 4 operações que somaram R$ 71.297,68, com nenhuma operação isolada atingindo R$ 20.000.",
+        "A maior operação no dia foi de R$ 19.418,96, abaixo do limite de R$ 20.000.",
+        "O canal predominante foi TED, com 7 operações e 72,2% do volume total."
+      ],
+      "justificativa": "O cliente apresentou um padrão de fracionamento em um único dia, com operações que somaram um valor significativo sem atingir os limites individuais. A concentração no canal TED também levanta preocupações sobre a natureza das transações. Informações adicionais sobre as contrapartes poderiam ser úteis para uma análise mais aprofundada."
+    },
+    "metricas": {
+      "cliente_id": "CLI-029",
+      "modelo": "gpt-4o-mini",
+      "chamadas_api": 4,
+      "ferramentas_usadas": [
+        "historico_cliente",
+        "operacoes_do_dia",
+        "perfil_canal"
+      ],
+      "n_ferramentas": 3,
+      "latencia_s": 7.57,
+      "tokens_entrada": 5475,
+      "tokens_saida": 274,
+      "tokens_total": 5749,
+      "custo_usd": 0.000986,
+      "aceito": true,
+      "motivo_recusa": null,
+      "chamadas": [
+        {
+          "cliente_id": "CLI-029",
+          "iteracao": 0,
+          "tokens_entrada": 940,
+          "tokens_saida": 20,
+          "latencia_s": 1.221,
+          "custo_usd": 0.000153
+        },
+        {
+          "cliente_id": "CLI-029",
+          "iteracao": 1,
+          "tokens_entrada": 1235,
+          "tokens_saida": 30,
+          "latencia_s": 1.639,
+          "custo_usd": 0.000203
+        },
+        {
+          "cliente_id": "CLI-029",
+          "iteracao": 2,
+          "tokens_entrada": 1547,
+          "tokens_saida": 20,
+          "latencia_s": 2.321,
+          "custo_usd": 0.000244
+        },
+        {
+          "cliente_id": "CLI-029",
+          "iteracao": 3,
+          "tokens_entrada": 1753,
+          "tokens_saida": 204,
+          "latencia_s": 2.363,
+          "custo_usd": 0.000385
+        }
+      ]
+    }
+  },
+  {
+    "cliente_id": "CLI-017",
+    "parecer": {
+      "nivel_risco": "alto",
+      "tipologia_suspeita": "fracionamento",
+      "red_flags": [
+        "Regra 1 disparou em 2026-03-08 com 4 operações somando R$ 64.673,88, todas abaixo de R$ 20.000.",
+        "A maior operação foi de R$ 18.761,22, realizada em canal TED.",
+        "Uso significativo do canal PIX, com 6 operações e volume de R$ 59.793,15."
+      ],
+      "justificativa": "O cliente apresentou um padrão de fracionamento em um único dia, com operações que somam um valor elevado sem que nenhuma delas atinja o limite de R$ 20.000. Além disso, a concentração de operações no canal PIX pode indicar um comportamento atípico. A análise de canais sugere um uso predominante de PIX, o que requer atenção."
+    },
+    "metricas": {
+      "cliente_id": "CLI-017",
+      "modelo": "gpt-4o-mini",
+      "chamadas_api": 4,
+      "ferramentas_usadas": [
+        "historico_cliente",
+        "operacoes_do_dia",
+        "perfil_canal"
+      ],
+      "n_ferramentas": 3,
+      "latencia_s": 6.24,
+      "tokens_entrada": 5470,
+      "tokens_saida": 272,
+      "tokens_total": 5742,
+      "custo_usd": 0.000984,
+      "aceito": true,
+      "motivo_recusa": null,
+      "chamadas": [
+        {
+          "cliente_id": "CLI-017",
+          "iteracao": 0,
+          "tokens_entrada": 940,
+          "tokens_saida": 20,
+          "latencia_s": 0.977,
+          "custo_usd": 0.000153
+        },
+        {
+          "cliente_id": "CLI-017",
+          "iteracao": 1,
+          "tokens_entrada": 1234,
+          "tokens_saida": 30,
+          "latencia_s": 1.564,
+          "custo_usd": 0.000203
+        },
+        {
+          "cliente_id": "CLI-017",
+          "iteracao": 2,
+          "tokens_entrada": 1545,
+          "tokens_saida": 20,
+          "latencia_s": 0.911,
+          "custo_usd": 0.000244
+        },
+        {
+          "cliente_id": "CLI-017",
+          "iteracao": 3,
+          "tokens_entrada": 1751,
+          "tokens_saida": 202,
+          "latencia_s": 2.757,
+          "custo_usd": 0.000384
+        }
+      ]
+    }
+  },
+  {
+    "cliente_id": "CLI-030",
+    "parecer": {
+      "nivel_risco": "alto",
+      "tipologia_suspeita": "valor atípico",
+      "red_flags": [
+        "Operação OP-00313 de R$ 77.628,19 é 16,84 vezes a mediana do cliente.",
+        "72,63% do volume total de operações é realizado via TED, indicando concentração em um único canal."
+      ],
+      "justificativa": "A análise revelou uma operação atípica que excede em mais de 5 vezes a mediana do cliente. Além disso, a concentração de 72,63% do volume em TED sugere um padrão que pode ser indicativo de risco. Essas informações são suficientes para classificar o cliente como de alto risco."
+    },
+    "metricas": {
+      "cliente_id": "CLI-030",
+      "modelo": "gpt-4o-mini",
+      "chamadas_api": 3,
+      "ferramentas_usadas": [
+        "historico_cliente",
+        "perfil_canal"
+      ],
+      "n_ferramentas": 2,
+      "latencia_s": 5.45,
+      "tokens_entrada": 3676,
+      "tokens_saida": 199,
+      "tokens_total": 3875,
+      "custo_usd": 0.000671,
+      "aceito": true,
+      "motivo_recusa": null,
+      "chamadas": [
+        {
+          "cliente_id": "CLI-030",
+          "iteracao": 0,
+          "tokens_entrada": 940,
+          "tokens_saida": 20,
+          "latencia_s": 1.136,
+          "custo_usd": 0.000153
+        },
+        {
+          "cliente_id": "CLI-030",
+          "iteracao": 1,
+          "tokens_entrada": 1265,
+          "tokens_saida": 20,
+          "latencia_s": 1.318,
+          "custo_usd": 0.000202
+        },
+        {
+          "cliente_id": "CLI-030",
+          "iteracao": 2,
+          "tokens_entrada": 1471,
+          "tokens_saida": 159,
+          "latencia_s": 2.971,
+          "custo_usd": 0.000316
+        }
+      ]
+    }
+  }
+]
