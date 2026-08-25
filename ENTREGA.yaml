@@ -1,0 +1,23 @@
+candidato: Felipe Bakowski Nantes de Souza
+modelo_usado: gemini-2.0-flash / llama-3.3-70b / etc 
+provedor: google-ai-studio / groq / ollama / outro 
+horas_dedicadas: 9 
+ 
+nivel_1: 
+  limpeza_dados:      {status: completo, onde: "nivel_1/nivel_1.ipynb, célula 4"} 
+  regras_pandas:      {status: completo, onde: "nivel_1/nivel_1.ipynb, célula 9"} 
+  validacao_regras:   {status: parcial,  onde: "nivel_1/nivel_1.ipynb, célula 11", nota: "validei só a Regra 1"} 
+  saida_estruturada:  {status: completo, onde: "nivel_1/nivel_1.ipynb, célula 15"} 
+  comparacao_prompts: {status: nao_feito, plano: "docs/DECISOES.md#prompts"} 
+ 
+nivel_2: 
+  regras_em_escala: {status: completo, onde: "nivel_2/agente.py"} 
+  ferramentas:      {status: completo, onde: "nivel_2/tools.py"} 
+  agente:           {status: completo, onde: "nivel_2/agente.py"} 
+  lote:             {status: completo, onde: "outputs/lote.csv"} 
+  confronto:        {status: nao_feito, plano: "docs/DECISOES.md#confronto"} 
+ 
+nivel_3: 
+  trilha_escolhida: B 
+  status: nao_feito 
+  plano: "docs/DECISOES.md#mcp" 
