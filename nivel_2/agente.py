@@ -93,6 +93,38 @@ Exemplo D — histórico já responde tudo.
   Cliente com 4 operações, uma atípica óbvia, canal único e contraparte única. Nenhuma
   outra ferramenta acrescenta. Emita o parecer direto.
 
+COMO GRADUAR O RISCO
+
+A sinalização por regra é o ponto de partida, não a conclusão. As regras são deliberadamente
+simples e geram falsos positivos: elas medem forma, não intenção. Seu trabalho é dizer se o que
+está nos dados sustenta a suspeita. O nível deve refletir a força da evidência, não o fato de a
+regra ter disparado.
+
+"alto" quando os indícios convergem e o padrão é difícil de explicar por atividade legítima:
+vários sinais independentes apontando para o mesmo lado, valores repetidamente logo abaixo de um
+limite, concentração em canal que dificulta rastreio, a mesma contraparte recebendo o conjunto,
+ou movimentação que não guarda relação com o resto do histórico do cliente.
+
+"médio" quando há indício real mas com explicação alternativa plausível: uma operação grande
+isolada que pode ser venda de ativo ou recebimento sazonal, um valor atípico num cliente que de
+resto é regular, ou um padrão que só se confirmaria com informação que você não tem.
+
+"baixo" quando o que disparou a regra se explica pelo próprio comportamento do cliente: a operação
+destoa da mediana mas é coerente com o porte e o tipo de atividade dele, ou a regra pegou uma
+tecnicalidade sem substância atrás.
+
+Gradue pela natureza do que você encontrou, não pelo fato de haver sinalização. Fracionamento é
+comportamento deliberado — alguém dividiu valores para ficar sob um limite, e isso é intenção
+visível no dado. Um valor atípico isolado é um ponto fora da curva, que sozinho não diz nada sobre
+intenção: empresas recebem pagamentos grandes. Vários pontos fora da curva no mesmo cliente já
+começam a formar padrão.
+
+Pese também o canal e a contraparte: espécie e saque escondem origem de um jeito que TED e boleto
+não escondem, e o mesmo destinatário recebendo o conjunto pesa mais do que destinatários variados.
+
+Os três níveis precisam ser usados. Se você classificar todo cliente sinalizado no mesmo nível,
+seu parecer não acrescenta nada ao que a regra já disse.
+
 REGRAS DO PARECER
 
 Os números vêm das ferramentas e já foram calculados e conferidos. Não recalcule somas,
@@ -240,6 +272,7 @@ class Agente:
             if not isinstance(d[campo], str) or not d[campo].strip():
                 return None, f"{campo} deve ser texto não vazio"
         return d, None
+
     def executar_lote(self, clientes):
         """Roda o agente sobre uma lista de clientes; devolve um registro por cliente."""
         registros = []
@@ -254,25 +287,29 @@ class Agente:
             registros.append({"cliente_id": cliente, "parecer": parecer, "metricas": metricas})
         return registros
 
+def parte_a(tools, n=10):
+    """Parte A — ranking dos clientes mais sinalizados."""
+    print(f"{len(tools.df)} operações, {tools.df['cliente_id'].nunique()} clientes, "
+          f"{len(tools.clientes_sinalizados())} sinalizados\n")
+    ranking = tools.top_clientes(n=n)
+    print(ranking.to_string())
+    return ranking
 
-if __name__ == "__main__":
+
+def parte_c(tools, clientes, modelo="gpt-4o-mini"):
+    """Parte C — roda o agente em lote e salva os resultados em outputs/."""
     import pandas as pd
 
-    SAIDA = Path(__file__).resolve().parent.parent / "outputs"
-    SAIDA.mkdir(exist_ok=True)
+    saida = Path(__file__).resolve().parent.parent / "outputs"
+    saida.mkdir(exist_ok=True)
 
-    tools = Tools()
-    clientes = tools.top_clientes(n=10).index.tolist()
     print(f"Rodando o agente sobre {len(clientes)} clientes: {clientes}\n")
+    registros = Agente(tools=tools, model=modelo).executar_lote(clientes)
 
-    registros = Agente(tools=tools).executar_lote(clientes)
-
-    # 1. um registro por cliente, com o parecer estruturado
-    (SAIDA / "lote.json").write_text(
+    (saida / "lote.json").write_text(
         json.dumps(registros, ensure_ascii=False, indent=2), encoding="utf-8"
     )
 
-    # 2. versão tabular
     linhas = []
     for r in registros:
         p, m = r["parecer"] or {}, r["metricas"]
@@ -296,13 +333,11 @@ if __name__ == "__main__":
             }
         )
     lote = pd.DataFrame(linhas)
-    lote.to_csv(SAIDA / "lote.csv", index=False)
+    lote.to_csv(saida / "lote.csv", index=False)
 
-    # 3. custo e latência de cada chamada de API, não só por cliente
     chamadas = pd.DataFrame([c for r in registros for c in r["metricas"]["chamadas"]])
-    chamadas.to_csv(SAIDA / "chamadas.csv", index=False)
+    chamadas.to_csv(saida / "chamadas.csv", index=False)
 
-    # ---------------------------------------------------------------- análise
     print("\n" + "=" * 72)
     print("TOTAIS DO LOTE")
     print("=" * 72)
@@ -320,9 +355,14 @@ if __name__ == "__main__":
     )
 
     print("\nPor chamada de API:")
-    print(chamadas[["tokens_entrada", "tokens_saida", "latencia_s", "custo_usd"]].describe().round(4).to_string())
+    print(
+        chamadas[["tokens_entrada", "tokens_saida", "latencia_s", "custo_usd"]]
+        .describe()
+        .round(4)
+        .to_string()
+    )
 
-    print("\nCusto por cliente, do mais caro ao mais barato:")
+    print("\nCusto por cliente:")
     print(
         lote[["cliente_id", "n_ferramentas", "chamadas_api", "tokens_total", "custo_usd", "latencia_s"]]
         .sort_values("custo_usd", ascending=False)
@@ -340,4 +380,15 @@ if __name__ == "__main__":
         .to_string()
     )
 
-    print(f"\nSalvos em outputs/: lote.json, lote.csv, chamadas.csv")
+    print("\nSalvos em outputs/: lote.json, lote.csv, chamadas.csv")
+    return registros
+
+if __name__ == "__main__":
+    tools = Tools()
+
+    # Parte A — ranking dos 10 mais sinalizados
+    ranking = parte_a(tools)
+
+    # Parte C — roda o agente em lote e salva em outputs/
+    # Comente uma das duas para rodar só a outra.
+    parte_c(tools, ranking.index.tolist())

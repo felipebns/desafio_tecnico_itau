@@ -2,94 +2,170 @@
 
 ## Trade-offs
 
-### Definição de "cliente sinalizado"
+### Formato dos arquivos em `outputs/`
 
-**Um cliente está sinalizado se qualquer uma das duas regras o alcançou** — seja ele o alvo
-direto da regra, seja dono de uma operação alvo.
+O enunciado pede "um registro por cliente, com o parecer estruturado" e "analise os totais com
+pandas", sem fixar formato. **Escolhi JSON como fonte da verdade e CSV como derivado**, contra
+usar só um dos dois.
 
-As duas regras têm granularidade diferente: a Regra 1 marca o cliente, a Regra 2 marca a
-operação. Adotar a união resolve isso sem privilegiar nenhuma das duas. 
+- **Ganho:** `red_flags` é lista; em CSV ela vira string concatenada e perde a estrutura, o que
+  inviabiliza reprocessar o parecer depois. O JSON preserva. O CSV existe porque é o que abre no
+  Excel e o que o `ENTREGA.yaml` do enunciado citava.
+- **Custo:** os dois arquivos podem divergir se alguém editar um só. `lote.csv` é sempre derivado
+  de `lote.json` na mesma execução, nunca escrito à mão.
 
-### Unidade de uma "sinalização"
+Criei também `chamadas.csv` (uma linha por chamada de API) e `controle.csv` (lote de controle),
+que o enunciado não pede. São suposições minhas sobre o que sustenta as análises exigidas: sem o
+primeiro não dá para falar de "custo de cada chamada", sem o segundo a taxa de concordância do
+confronto não significa nada.
 
-Cada dia que aciona a Regra 1 conta um sinal, cada operação que aciona a Regra 2 conta um. A
-assimetria vem das regras: a 1 sinaliza o cliente, a 2 sinaliza a operação.
+### Definição de "cliente sinalizado": união das regras
 
-Contar linhas com a flag ligada seria errado — `flag_regra1_fracionamento` fica `True` em todas
-as operações do cliente, então CLI-029 valeria 16 sinais por ter 16 transações, não por ser
-suspeito. E ordenar pelo booleano `cliente_sinalizado` empataria os 17: ele filtra quem entra
-na lista, não ordena.
+As regras têm granularidade diferente — a 1 marca o cliente, a 2 marca a operação. **Escolhi a
+união**, contra usar só a Regra 1 ou exigir as duas.
 
-Contar por dia não muda nada nesta base (nenhum cliente tem mais de um dia sinalizado), mas dois
-fracionamentos em datas diferentes são dois casos na fila.
+- **Ganho:** o que importa para a mesa é se o cliente precisa de olho humano, não qual regra o
+  trouxe. Usar só a Regra 1 no Nível 2 deixaria 13 dos 17 clientes de fora.
+- **Custo:** trata como equivalentes dois sinais de natureza muito diferente. Um cliente pego por
+  fracionamento e outro por valor atípico entram na mesma fila com o mesmo rótulo, e só a coluna
+  de origem distingue.
 
-### SDK nativo em vez de framework de agente
+### Unidade de "sinalização": o disparo
 
-Usei o SDK da OpenAI direto (Responses API com function calling), sem LangChain ou LangGraph.
-O enunciado aceita "SDK nativo do provedor, ou na mão", e o SDK já era dependência do Nível 1 —
-um framework acrescentaria uma camada de abstração e uma dependência para um laço de três
-ferramentas que cabe em 20 linhas. Também deixa visível, no código, exatamente o que vai e o que
-volta em cada chamada, que é o que preciso para medir tokens e latência por iteração na Parte C.
+**Escolhi contar disparos** — um por dia que aciona a Regra 1, um por operação que aciona a Regra 2
+— contra contar regras acionadas (0, 1 ou 2) ou linhas com a flag ligada.
 
-O custo dessa escolha é portabilidade: trocar de provedor exige reescrever o laço, enquanto um
-framework abstrairia isso. Como o desafio fixa um provedor, o custo não se realiza aqui.
+- **Ganho:** corresponde a um caso na fila de triagem, e é a única das três que produz ordenação
+  útil. As outras achatam: pelo booleano, os 17 empatam; por linhas com flag, o CLI-029 valeria 16
+  sinais por ter 16 transações, não por ser suspeito.
+- **Custo:** soma coisas que não são comensuráveis. Três operações atípicas contam mais que um
+  fracionamento, o que é discutível — fracionamento é comportamento deliberado e valor atípico não.
 
-### Mesma validação de saída do Nível 1
+### SDK nativo, não framework de agente
 
-O agente reusa a validação estrutural do Nível 1 em vez de confiar no `json_object` da API: o
-conjunto de campos tem que bater exatamente, `nivel_risco` é normalizado e checado contra o
-domínio, `red_flags` precisa ser lista de strings não vazias.
+**Escolhi a Responses API com function calling**, contra LangChain ou LangGraph.
 
-Manter o mesmo contrato nos dois níveis significa que o parecer tem o mesmo formato venha de onde
-vier, o que é o que permite o confronto da Parte D comparar coisas comparáveis. E a validação
-continua necessária mesmo com `json_object` ligado: o formato garante que a resposta é JSON,
-não que é o *nosso* JSON — forçando prompts ruins, o modelo devolve JSON perfeitamente válido com
-campos errados, e é a validação semântica que barra.
+- **Ganho:** zero dependência nova, e o laço fica visível — é o que permitiu instrumentar tokens e
+  latência por iteração, que é de onde saiu a descoberta de que a entrada domina o custo. Um
+  framework esconderia isso atrás de callbacks.
+- **Custo:** portabilidade. Trocar de provedor exige reescrever o laço e o formato de tool call,
+  enquanto um framework abstrairia. Como o desafio fixa um provedor, o custo não se realiza aqui —
+  mas se realizaria num sistema real que quisesse trocar de modelo.
 
+### Validação própria, não `json_schema` estrito
 
-### Custo medido por chamada, não só por cliente
+**Escolhi `json_object` mais validação semântica em Python**, contra `json_schema` com `strict`,
+que tornaria o desvio estruturalmente impossível.
 
-O enunciado pede custo e latência "de cada chamada". Um cliente consome 3 ou 4 chamadas de API,
-então instrumentei o laço por iteração e salvo isso separado em `outputs/chamadas.csv`. Sem esse
-recorte a média por cliente esconde que as chamadas são muito desiguais: a última — a que redige
-o parecer — gasta ~200 tokens de saída, enquanto as intermediárias, que só pedem ferramenta,
-gastam 20.
+- **Ganho:** o caminho de recusa existe e é testável, que é o que o item 9 do Nível 1 pede
+  demonstrar. Com `json_schema` a validação vira código morto. E ela pega o que o formato não pega:
+  forçando prompts ruins, o modelo devolve JSON perfeitamente válido com campos errados.
+- **Custo:** o modelo pode devolver saída inválida, e devolve. Sem retentativa, isso é um parecer
+  perdido no lote. Além disso, testei `json_schema` e ele fez o agente entrar em laço chamando
+  `operacoes_do_dia` em datas descendentes — não valeu o risco.
 
-Os preços por 1M de tokens estão em constante no topo de `agente.py`, marcada como parâmetro a
-conferir. Não é número que o código tenha como saber sozinho.
+### Estrutura do prompt: papel, exemplos-caso, escala qualitativa
 
-### Onde o custo do lote realmente está
+O prompt do agente tem quatro camadas: papel e o que cada regra significa; como escolher
+ferramentas, com quatro exemplos-caso; como graduar risco, em linguagem qualitativa; e o contrato
+de saída. **Escolhi orientar por exemplo**, contra duas alternativas — um prompt curto deixando o
+modelo decidir tudo, ou um roteiro fixo por tipo de sinalização.
 
-10 clientes, 32 chamadas, 42.946 tokens, US$ 0,0075 no total. O que domina é o **prompt**, não a
-resposta: 1.271 tokens de entrada contra 71 de saída em média por chamada. A entrada cresce a cada
-iteração porque o histórico de tool calls é reenviado inteiro.
+- **Ganho:** os exemplos-caso produzem escolha diferenciada sem hardcode. Cliente de Regra 1 puxa
+  `operacoes_do_dia`, cliente de Regra 2 não — e cliente sem sinalização para na primeira
+  ferramenta. Um roteiro fixo daria o mesmo comportamento, mas seria script, não agente.
+- **Custo:** prompt longo é caro. A entrada é reenviada inteira a cada iteração e já domina a
+  conta — ~1.271 tokens de entrada contra ~71 de saída por chamada. Cada exemplo-caso é pago em
+  toda iteração de todo cliente.
+- **Limite que encontrei:** prompt é instrumento grosseiro para calibrar julgamento. A primeira
+  versão sem escala de risco deu `alto` para 9 de 10; acrescentar "não use alto como padrão"
+  inverteu para `médio` em 10 de 10. Só funcionou quando parei de dizer o que não fazer e passei a
+  descrever a natureza da evidência — fracionamento é intenção visível, valor atípico isolado não
+  é, espécie esconde origem e TED não. Nenhuma versão usou número ou limite.
 
-Consequência prática: economizar prosa no parecer não muda quase nada; o que muda o custo é o
-número de ferramentas chamadas. Cliente de Regra 1 custa US$ 0,00099 (3 ferramentas, 4 chamadas)
-contra US$ 0,00069 do de Regra 2 (2 ferramentas, 3 chamadas) — 43% mais caro pela ferramenta extra.
+### Escopo do contexto enviado ao modelo: o cliente inteiro
 
-### O agente quase não discrimina risco
+**Escolhi mandar todas as operações do cliente analisado**, contra mandar só as linhas sinalizadas
+ou a base inteira.
 
-9 de 10 clientes saíram `alto`, 1 saiu `médio`. Como todos os 10 já vinham sinalizados por regra,
-um agente que responde `alto` para quase tudo concorda com a regra por construção, não por
-análise — e o confronto da Parte D vai medir concordância alta sem que isso signifique nada.
+- **Ganho:** sem as operações normais o modelo não tem baseline para dizer que três transações de
+  ~R$ 18.000 num dia destoam do padrão daquele cliente. E o recorte por cliente é o que faz o custo
+  escalar: mandar a base inteira a cada chamada seria ~30x mais caro no Nível 2, pelo mesmo parecer.
+- **Custo:** o modelo não consegue comparar o cliente com a carteira. Nada nele é "mais grave que"
+  outro cliente, e é provavelmente daí que vem a inconsistência entre casos parecidos.
 
-Duas causas prováveis, ambas de desenho e não de bug: o prompt não dá critério para separar níveis
-(diz o que é cada regra, mas não o que distingue médio de alto), e o agente só vê clientes já
-sinalizados, sem base de comparação com quem não foi. Um lote de controle com clientes não
-sinalizados diria se ele sabe dizer `baixo`.
+### Critério do confronto: semântica da regra
 
-### Verificação de que a LLM não calcula
+A sugestão do enunciado — sinalizado pelas duas regras vira risco alto — é inaplicável, porque a
+interseção é vazia. **Escolhi traduzir a semântica de cada regra para a escala do agente**
+(fracionamento → alto; 2+ atípicas → médio; 1 atípica → baixo), contra usar volume ou contagem
+bruta de sinalizações.
 
-Auditei os 10 pareceres extraindo todo numeral do texto e conferindo contra o retorno literal das
-ferramentas: **zero números sem lastro**. Foi essa auditoria que expôs, antes do lote, o caso em
-que o modelo escrevia "5x a mediana" para uma operação de 16,84x — corrigido entregando
-`razao_vs_mediana` pronta.
-
-Vale registrar que essa auditoria é frágil: ela confere se o número aparece em algum retorno, não
-se ele foi usado no contexto certo. Em execuções anteriores ao lote eu vi números órfãos em cerca
-de 1 a cada 10 execuções, então a taxa não é zero — o lote é que saiu limpo.
+- **Ganho:** o critério carrega significado. Fracionamento é comportamento deliberado e sai como
+  alto; operação única é onde o falso positivo mora e sai como baixo.
+- **Custo:** ignora magnitude e canal, e isso apareceu — duas das quatro divergências foram o
+  agente reagindo a razões muito altas ou a uso de espécie, dimensões que o critério não pesa. A
+  análise caso a caso está em `outputs/confronto_analise.md`.
 
 ## Limitações
 
+### Onde a solução quebraria com dados reais
+
+**O dedupe assume que id repetido é sempre recarga.** Nas duas bases as duplicatas são linhas
+idênticas nos 9 campos. Num legado real o mesmo id apareceria com campos divergentes — valor
+corrigido, data reprocessada — e a pergunta viraria qual versão vale. `drop_duplicates()` manteria
+as duas e contaria duas operações.
+
+**A Regra 1 não tem memória.** Olha um único dia. Fracionamento real se espalha por dias
+consecutivos justamente para escapar de regra assim: quatro operações de R$ 15.000 em quatro dias
+seguidos não disparam nada.
+
+**A mediana da Regra 2 inclui a própria operação atípica.** Com poucas operações por cliente isso
+puxa a mediana para cima, tornando a regra mais conservadora conforme o cliente é mais suspeito.
+
+**O corte de 4+ operações nunca foi exercitado.** Nenhum cliente inelegível teria sido sinalizado de
+todo modo, então não sei se está calibrado — só sei que não barrou nada.
+
+**Nenhuma regra olha canal, contraparte ou tipo.** Espécie, saque e concentração num único
+destinatário são sinais clássicos de PLD e estão fora do escopo determinístico.
+
+### Onde a solução com LLM é frágil
+
+**Não há reprodutibilidade.** A Responses API não expõe `seed`, e mesmo com `temperature=0` a saída
+varia. Não é hipotético: duas execuções do mesmo lote deram 6 médio/4 alto e 5 médio/5 alto, e a
+concordância do confronto foi de 70% para 60%. Os números em `outputs/` são de uma execução, não de
+uma medida estável.
+
+**O agente é inconsistente entre casos parecidos.** CLI-013 saiu alto com razões de 9,05x e 8,5x
+enquanto CLI-023, mais grave em todas as dimensões, já saiu médio. Ele avalia um cliente por vez.
+
+**A auditoria de lastro numérico é fraca.** Confere se o numeral aparece em algum retorno, não se
+foi usado no contexto certo. O lote saiu limpo, mas em execuções avulsas vi números sem lastro em
+cerca de 1 a cada 10.
+
+**O custo escala com ferramentas, não com tamanho do parecer.** A entrada é reenviada inteira a
+cada iteração. Numa base de milhares de clientes isso domina.
+
+
 ## O que faria com mais tempo
+
+### Loop de feedback na validação
+
+**Arquitetura:** ao recusar, devolver o erro de validação ao modelo numa segunda chamada, com o
+parecer inválido e a mensagem específica ("campos ausentes: [...]"), teto de 2 tentativas.
+**Ferramenta:** o próprio laço do agente, que já acumula `input` — basta anexar o erro como turno.
+**Validação:** rodar o mesmo lote com e sem o loop e comparar taxa de aceitação e custo médio. Só
+vale se a recuperação custar menos que a chamada perdida.
+
+### Nível 3 — Trilha A, fluxo multiagente
+
+**Arquitetura:** três papéis encadeados sobre o que já existe. **Triador** recebe cliente e dossiê
+e decide se o caso segue — cliente sem sinalização para aqui, que é o que o lote de controle já
+mostra o agente fazendo. **Investigador** é o agente atual, com as três ferramentas. **Redator**
+recebe as evidências e escreve o parecer validado, sem acesso a ferramentas, para não reabrir
+investigação na hora de redigir.
+
+
+### Utilização de LangChain como framework para agente de IA. 
+
+A curto prazo, o SDK da OpenAI funciona perfeitamente, mas falta robustez ao longo prazo, gostaria de utilizar um framework mais completo para criar uma solução que funciona melhor para esse cenário

@@ -1,0 +1,5 @@
+cliente_id,nivel_regra,nivel_agente,n_red_flags,n_ferramentas,tokens_total,custo_usd,concorda
+CLI-004,baixo,baixo,0,1,3223,0.000543,True
+CLI-006,baixo,baixo,0,1,3213,0.000541,True
+CLI-009,baixo,baixo,0,1,3242,0.000552,True
+CLI-010,baixo,baixo,0,1,3243,0.000555,True
